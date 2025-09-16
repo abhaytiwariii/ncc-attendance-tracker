@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NCC Attendance - Analytics Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-chart-bar"></i> NCC Attendance Analytics</h1>
+            <p>Comprehensive Attendance Statistics and Individual Cadet Performance</p>
+        </header>
+
+        <div class="dashboard-controls">
+            <div class="control-buttons">
+                <button type="button" id="refreshData" class="btn btn-primary">
+                    <i class="fas fa-sync"></i> Refresh Data
+                </button>
+                <button type="button" id="exportCadetsReport" class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Export Cadet Performance
+                </button>
+                <button type="button" id="exportAttendanceReport" class="btn btn-info">
+                    <i class="fas fa-download"></i> Export Attendance Report
+                </button>
+                <button type="button" id="resetData" class="btn btn-danger">
+                    <i class="fas fa-trash-alt"></i> Reset All Data
+                </button>
+                <button type="button" id="backToHome" class="btn btn-secondary">
+                    <i class="fas fa-home"></i> Back to Home
+                </button>
+            </div>
+        </div>
+
+        <div class="dashboard-overview">
+            <div class="overview-card total-days">
+                <div class="card-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="card-content">
+                    <div class="card-title">Total Days Recorded</div>
+                    <div class="card-value" id="totalDays">0</div>
+                </div>
+            </div>
+
+            <div class="overview-card avg-attendance">
+                <div class="card-icon">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="card-content">
+                    <div class="card-title">Overall Average Attendance</div>
+                    <div class="card-value" id="avgAttendance">0%</div>
+                </div>
+            </div>
+
+            <div class="overview-card perfect-days">
+                <div class="card-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="card-content">
+                    <div class="card-title">Perfect Attendance Days</div>
+                    <div class="card-value" id="perfectDays">0</div>
+                </div>
+            </div>
+
+            <div class="overview-card most-active">
+                <div class="card-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="card-content">
+                    <div class="card-title">Total Active Cadets</div>
+                    <div class="card-value" id="totalCadets">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-sections">
+            <div class="section-left">
+                <div class="analytics-section">
+                    <h3><i class="fas fa-chart-line"></i> Individual Cadet Performance</h3>
+                    <div class="performance-filters">
+                        <select id="performanceYearFilter" class="filter-select">
+                            <option value="all">All Years</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                        </select>
+                        <select id="performanceDivisionFilter" class="filter-select">
+                            <option value="all">All Divisions</option>
+                            <option value="SD">Senior Division</option>
+                            <option value="SW">Senior Wing</option>
+                        </select>
+                        <select id="performanceSortFilter" class="filter-select">
+                            <option value="percentage">Sort by Percentage</option>
+                            <option value="name">Sort by Name</option>
+                            <option value="rank">Sort by Rank</option>
+                        </select>
+                    </div>
+                    <div class="cadet-performance-list" id="cadetPerformanceList">
+                        <!-- Individual cadet performance will be loaded here -->
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3><i class="fas fa-graduation-cap"></i> Year-wise Performance</h3>
+                    <div class="year-stats" id="yearStats"></div>
+                </div>
+            </div>
+
+            <div class="section-right">
+                <div class="analytics-section">
+                    <h3><i class="fas fa-layer-group"></i> Division-wise Performance</h3>
+                    <div class="division-stats" id="divisionStats"></div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3><i class="fas fa-award"></i> Top Performers</h3>
+                    <div class="top-performers" id="topPerformers"></div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Attendance Alerts</h3>
+                    <div class="attendance-alerts" id="attendanceAlerts"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="recent-records">
+            <h3><i class="fas fa-history"></i> Recent Attendance Records</h3>
+            <div class="records-timeline" id="recordsTimeline"></div>
+        </div>
+
+        <div id="notification" class="notification" style="display: none;"></div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            dashboardManager.loadDashboardData();
+            
+            // Event listeners
+            document.getElementById('refreshData').addEventListener('click', () => {
+                dashboardManager.loadDashboardData();
+            });
+            
+            document.getElementById('exportCadetsReport').addEventListener('click', () => {
+                dashboardManager.exportCadetsPerformanceReport();
+            });
+            
+            document.getElementById('exportAttendanceReport').addEventListener('click', () => {
+                dashboardManager.exportAttendanceReport();
+            });
+            
+            document.getElementById('resetData').addEventListener('click', () => {
+                dashboardManager.resetDashboardData();
+            });
+            
+            document.getElementById('backToHome').addEventListener('click', function() {
+                window.location.href = 'index.html';
+            });
+
+            // Performance filters
+            document.getElementById('performanceYearFilter').addEventListener('change', () => {
+                dashboardManager.filterCadetPerformance();
+            });
+            
+            document.getElementById('performanceDivisionFilter').addEventListener('change', () => {
+                dashboardManager.filterCadetPerformance();
+            });
+            
+            document.getElementById('performanceSortFilter').addEventListener('change', () => {
+                dashboardManager.filterCadetPerformance();
+            });
+        });
+    </script>
+</body>
+</html>
