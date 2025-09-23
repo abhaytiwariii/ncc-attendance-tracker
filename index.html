@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NCC Attendance - Record Attendance</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <h1><i class="fas fa-users"></i> NCC Attendance System</h1>
+        <p>Record Daily Attendance</p>
+      </header>
+
+      <div class="date-selector">
+        <div class="form-group">
+          <label for="attendanceDate">
+            <i class="fas fa-calendar-alt"></i> Select Date:
+          </label>
+          <input type="date" id="attendanceDate" required />
+        </div>
+      </div>
+
+      <div class="search-section" id="searchSection" style="display: none">
+        <div class="search-container">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search cadets by name or rank..."
+            class="search-input"
+          />
+          <button
+            type="button"
+            id="closeSearch"
+            class="btn btn-secondary btn-sm"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="attendance-section">
+        <div class="section-header">
+          <h2>Cadet Attendance</h2>
+          <div class="bulk-actions">
+            <button type="button" id="markAllPresent" class="btn btn-success">
+              <i class="fas fa-check-circle"></i> Mark All Present
+            </button>
+            <button type="button" id="markAllAbsent" class="btn btn-danger">
+              <i class="fas fa-times-circle"></i> Mark All Absent
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-controls">
+          <div class="filter-group">
+            <label for="yearFilter">
+              <i class="fas fa-graduation-cap"></i> Filter by Year:
+            </label>
+            <select id="yearFilter" class="filter-select">
+              <option value="all">All Years</option>
+              <option value="1">1st Year</option>
+              <option value="2">2nd Year</option>
+              <option value="3">3rd Year</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="divisionFilter">
+              <i class="fas fa-layer-group"></i> Filter by Division:
+            </label>
+            <select id="divisionFilter" class="filter-select">
+              <option value="all">All Divisions</option>
+              <option value="SD">Senior Division (SD)</option>
+              <option value="SW">Senior Wing (SW)</option>
+            </select>
+          </div>
+
+          <div class="filter-stats" id="filterStats">
+            <span class="filter-count"
+              >Showing: <strong id="cadetCount">0</strong> cadets</span
+            >
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table id="attendanceTable" class="attendance-table">
+            <thead>
+              <tr>
+                <th>Cadet Name</th>
+                <th>Year</th>
+                <th>Division</th>
+                <th>Rank</th>
+                <th>Attendance</th>
+                <th>Reason (if Absent)</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceTableBody">
+              <!-- Dynamic content will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="add-cadet-section">
+          <button type="button" id="addCadetBtn" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New Cadet
+          </button>
+        </div>
+      </div>
+
+      <div
+        class="attendance-summary-preview"
+        id="attendanceSummary"
+        style="display: none"
+      >
+        <div class="summary-preview">
+          <h3><i class="fas fa-chart-bar"></i> Quick Summary</h3>
+          <div class="summary-stats">
+            <span class="stat present"
+              ><i class="fas fa-check"></i> Present:
+              <strong id="previewPresent">0</strong></span
+            >
+            <span class="stat absent"
+              ><i class="fas fa-times"></i> Absent:
+              <strong id="previewAbsent">0</strong></span
+            >
+            <span class="stat total"
+              ><i class="fas fa-users"></i> Total:
+              <strong id="previewTotal">0</strong></span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button type="button" id="saveAttendance" class="btn btn-primary">
+          <i class="fas fa-save"></i> Save Attendance
+        </button>
+        <button
+          type="button"
+          id="viewAttendance"
+          class="btn btn-secondary"
+          style="display: none"
+        >
+          <i class="fas fa-eye"></i> View Attendance
+        </button>
+        <button type="button" id="clearAll" class="btn btn-warning">
+          <i class="fas fa-eraser"></i> Clear All
+        </button>
+        <button type="button" id="searchCadets" class="btn btn-info">
+          <i class="fas fa-search"></i> Search
+        </button>
+        <button type="button" id="viewDashboard" class="btn btn-warning">
+          <i class="fas fa-chart-bar"></i> Analytics
+        </button>
+      </div>
+
+      <!-- Add Cadet Modal -->
+      <div id="addCadetModal" class="modal" style="display: none">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3><i class="fas fa-user-plus"></i> Add New Cadet</h3>
+            <button type="button" class="close-modal" id="closeAddModal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <form id="addCadetForm" class="modal-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cadetName">Full Name:</label>
+                <input
+                  type="text"
+                  id="cadetName"
+                  required
+                  placeholder="Enter cadet's full name"
+                />
+              </div>
+              <div class="form-group">
+                <label for="cadetRank">Rank:</label>
+                <select id="cadetRank" required>
+                  <option value="">Select Rank</option>
+                  <option value="Cadet">Cadet</option>
+                  <option value="Lance Corporal">Lance Corporal</option>
+                  <option value="Corporal">Corporal</option>
+                  <option value="Sergeant">Sergeant</option>
+                  <option value="Company Havildar Major">
+                    Company Havildar Major
+                  </option>
+                  <option value="Company Quartermaster Sergeant">
+                    Company Quartermaster Sergeant
+                  </option>
+                  <option value="Junior Under Officer">
+                    Junior Under Officer
+                  </option>
+                  <option value="Senior Under Officer">
+                    Senior Under Officer
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cadetYear">Year:</label>
+                <select id="cadetYear" required>
+                  <option value="">Select Year</option>
+                  <option value="1">1st Year</option>
+                  <option value="2">2nd Year</option>
+                  <option value="3">3rd Year</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="cadetDivision">Division:</label>
+                <select id="cadetDivision" required>
+                  <option value="">Select Division</option>
+                  <option value="SD">Senior Division (SD)</option>
+                  <option value="SW">Senior Wing (SW)</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button
+                type="button"
+                id="cancelAddCadet"
+                class="btn btn-secondary"
+              >
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-primary">Add Cadet</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Cadet Info Modal -->
+      <div id="cadetInfoModal" class="modal" style="display: none">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3><i class="fas fa-user"></i> Cadet Information</h3>
+            <button type="button" class="close-modal" id="closeCadetInfoModal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="cadet-info-content">
+            <div class="info-section">
+              <h4>Personal Details</h4>
+              <div class="info-grid">
+                <div class="info-item">
+                  <label>Name:</label>
+                  <span id="infoName">-</span>
+                </div>
+                <div class="info-item">
+                  <label>Rank:</label>
+                  <span id="infoRank">-</span>
+                </div>
+                <div class="info-item">
+                  <label>Year:</label>
+                  <span id="infoYear">-</span>
+                </div>
+                <div class="info-item">
+                  <label>Division:</label>
+                  <span id="infoDivision">-</span>
+                </div>
+              </div>
+            </div>
+            <div class="info-section">
+              <h4>Attendance Statistics</h4>
+              <div class="stats-grid">
+                <div class="stat-card">
+                  <div class="stat-value" id="infoAttendancePercentage">0%</div>
+                  <div class="stat-label">Overall Attendance</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-value" id="infoPresentDays">0</div>
+                  <div class="stat-label">Days Present</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-value" id="infoAbsentDays">0</div>
+                  <div class="stat-label">Days Absent</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-value" id="infoTotalDays">0</div>
+                  <div class="stat-label">Total Days</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Cadet Modal -->
+      <div id="editCadetModal" class="modal" style="display: none">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Edit Cadet</h3>
+            <button type="button" class="close-modal" id="closeEditModal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <form id="editCadetForm" class="modal-form">
+            <input type="hidden" id="editCadetId" />
+            <div class="form-row">
+              <div class="form-group">
+                <label for="editCadetName">Full Name:</label>
+                <input type="text" id="editCadetName" required />
+              </div>
+              <div class="form-group">
+                <label for="editCadetRank">Rank:</label>
+                <select id="editCadetRank" required>
+                  <option value="Cadet">Cadet</option>
+                  <option value="Lance Corporal">Lance Corporal</option>
+                  <option value="Corporal">Corporal</option>
+                  <option value="Sergeant">Sergeant</option>
+                  <option value="Company Havildar Major">
+                    Company Havildar Major
+                  </option>
+                  <option value="Company Quartermaster Sergeant">
+                    Company Quartermaster Sergeant
+                  </option>
+                  <option value="Junior Under Officer">
+                    Junior Under Officer
+                  </option>
+                  <option value="Senior Under Officer">
+                    Senior Under Officer
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="editCadetYear">Year:</label>
+                <select id="editCadetYear" required>
+                  <option value="1">1st Year</option>
+                  <option value="2">2nd Year</option>
+                  <option value="3">3rd Year</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="editCadetDivision">Division:</label>
+                <select id="editCadetDivision" required>
+                  <option value="SD">Senior Division (SD)</option>
+                  <option value="SW">Senior Wing (SW)</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button
+                type="button"
+                id="cancelEditCadet"
+                class="btn btn-secondary"
+              >
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-primary">
+                Update Cadet
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div id="notification" class="notification" style="display: none"></div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/cadet-manager.js"></script>
+    <script src="js/attendance.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>

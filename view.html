@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NCC Attendance - View Records</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <h1><i class="fas fa-eye"></i> View Attendance Records</h1>
+        <p>Detailed Attendance View</p>
+      </header>
+
+      <div class="view-controls">
+        <div class="date-info">
+          <h2 id="selectedDateTitle">Loading...</h2>
+          <div class="date-navigation">
+            <button
+              type="button"
+              id="prevDate"
+              class="btn btn-secondary btn-sm"
+            >
+              <i class="fas fa-chevron-left"></i> Previous Day
+            </button>
+            <input type="date" id="viewDate" class="form-control" />
+            <button
+              type="button"
+              id="nextDate"
+              class="btn btn-secondary btn-sm"
+            >
+              Next Day <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+        <div class="view-actions">
+          <button type="button" id="viewDashboard" class="btn btn-warning btn-margin">
+            <i class="fas fa-chart-bar"></i> Analytics
+          </button>
+          <button type="button" id="exportCurrentView" class="btn btn-info btn-margin">
+            <i class="fas fa-download"></i> Export This Day
+          </button>
+          <button type="button" id="backToRecord" class="btn btn-primary btn-margin">
+            <i class="fas fa-plus"></i> Record Attendance
+          </button>
+          <button type="button" id="backToHome" class="btn btn-secondary btn-margin">
+            <i class="fas fa-home"></i> Home
+          </button>
+        </div>
+      </div>
+
+      <div class="attendance-summary">
+        <div class="summary-card present">
+          <i class="fas fa-user-check"></i>
+          <div class="summary-info">
+            <div class="summary-label">Present</div>
+            <div class="summary-count" id="presentCount">0</div>
+          </div>
+        </div>
+        <div class="summary-card absent">
+          <i class="fas fa-user-times"></i>
+          <div class="summary-info">
+            <div class="summary-label">Absent</div>
+            <div class="summary-count" id="absentCount">0</div>
+          </div>
+        </div>
+        <div class="summary-card total">
+          <i class="fas fa-users"></i>
+          <div class="summary-info">
+            <div class="summary-label">Total</div>
+            <div class="summary-count" id="totalCount">0</div>
+          </div>
+        </div>
+        <div class="summary-card percentage">
+          <i class="fas fa-percentage"></i>
+          <div class="summary-info">
+            <div class="summary-label">Attendance %</div>
+            <div class="summary-count" id="attendancePercentage">0%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view-filters">
+        <div class="filter-group">
+          <label for="viewYearFilter">
+            <i class="fas fa-graduation-cap"></i> Filter by Year:
+          </label>
+          <select id="viewYearFilter" class="filter-select">
+            <option value="all">All Years</option>
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="viewDivisionFilter">
+            <i class="fas fa-layer-group"></i> Filter by Division:
+          </label>
+          <select id="viewDivisionFilter" class="filter-select">
+            <option value="all">All Divisions</option>
+            <option value="SD">Senior Division (SD)</option>
+            <option value="SW">Senior Wing (SW)</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="viewStatusFilter">
+            <i class="fas fa-filter"></i> Filter by Status:
+          </label>
+          <select id="viewStatusFilter" class="filter-select">
+            <option value="all">All Status</option>
+            <option value="present">Present Only</option>
+            <option value="absent">Absent Only</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="attendance-records" id="attendanceRecords">
+        <!-- Records will be loaded here -->
+      </div>
+
+      <div id="notification" class="notification" style="display: none"></div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+      class ViewAttendanceManager {
+        constructor() {
+          this.currentDate = new Date().toISOString().split("T")[0];
+          this.filters = {
+            year: "all",
+            division: "all",
+            status: "all",
+          };
+          this.setupEventListeners();
+          this.initializePage();
+        }
+
+        setupEventListeners() {
+          document
+            .getElementById("viewDate")
+            .addEventListener("change", (e) => {
+              this.currentDate = e.target.value;
+              this.loadAttendanceData();
+            });
+
+          document.getElementById("prevDate").addEventListener("click", () => {
+            this.navigateDate(-1);
+          });
+
+          document.getElementById("nextDate").addEventListener("click", () => {
+            this.navigateDate(1);
+          });
+
+          document
+            .getElementById("exportCurrentView")
+            .addEventListener("click", () => {
+              this.exportCurrentView();
+            });
+
+          document
+            .getElementById("backToRecord")
+            .addEventListener("click", () => {
+              window.location.href = `index.html?date=${this.currentDate}`;
+            });
+
+          document
+            .getElementById("backToHome")
+            .addEventListener("click", () => {
+              window.location.href = "index.html";
+            });
+
+          // Filter handlers
+          ["viewYearFilter", "viewDivisionFilter", "viewStatusFilter"].forEach(
+            (filterId) => {
+              document
+                .getElementById(filterId)
+                .addEventListener("change", (e) => {
+                  this.filters[
+                    filterId
+                      .replace("view", "")
+                      .replace("Filter", "")
+                      .toLowerCase()
+                  ] = e.target.value;
+                  this.applyFilters();
+                });
+            }
+          );
+        }
+
+        initializePage() {
+          const urlDate = getURLParameter("date");
+          if (urlDate) {
+            this.currentDate = urlDate;
+          }
+
+          document.getElementById("viewDate").value = this.currentDate;
+          this.loadAttendanceData();
+        }
+
+        navigateDate(days) {
+          const currentDate = new Date(this.currentDate);
+          currentDate.setDate(currentDate.getDate() + days);
+          this.currentDate = currentDate.toISOString().split("T")[0];
+          document.getElementById("viewDate").value = this.currentDate;
+          this.loadAttendanceData();
+        }
+
+        loadAttendanceData() {
+          const attendanceData = dataManager.getAttendanceData(
+            this.currentDate
+          );
+
+          document.getElementById(
+            "selectedDateTitle"
+          ).textContent = `Attendance for ${formatDate(this.currentDate)}`;
+
+          if (!attendanceData || attendanceData.length === 0) {
+            this.showNoDataMessage();
+            return;
+          }
+
+          this.displaySummary(attendanceData);
+          this.displayRecords(attendanceData);
+        }
+
+        showNoDataMessage() {
+          document.getElementById("attendanceRecords").innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-times"></i>
+                        <h3>No Attendance Data</h3>
+                        <p>No attendance has been recorded for ${formatDate(
+                          this.currentDate
+                        )}</p>
+                        <button type="button" class="btn btn-primary" onclick="window.location.href='index.html?date=${
+                          this.currentDate
+                        }'">
+                            <i class="fas fa-plus"></i> Record Attendance
+                        </button>
+                    </div>
+                `;
+
+          // Reset summary
+          document.getElementById("presentCount").textContent = "0";
+          document.getElementById("absentCount").textContent = "0";
+          document.getElementById("totalCount").textContent = "0";
+          document.getElementById("attendancePercentage").textContent = "0%";
+        }
+
+        displaySummary(data) {
+          const presentCount = data.filter(
+            (r) => r.status === "present"
+          ).length;
+          const absentCount = data.filter((r) => r.status === "absent").length;
+          const totalCount = data.length;
+          const percentage =
+            totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
+
+          document.getElementById("presentCount").textContent = presentCount;
+          document.getElementById("absentCount").textContent = absentCount;
+          document.getElementById("totalCount").textContent = totalCount;
+          document.getElementById(
+            "attendancePercentage"
+          ).textContent = `${percentage}%`;
+
+          // Update percentage card color
+          const percentageCard = document.querySelector(
+            ".summary-card.percentage"
+          );
+          percentageCard.className = `summary-card percentage ${this.getPerformanceClass(
+            percentage
+          )}`;
+        }
+
+        displayRecords(data) {
+          // Sort data by year first (1,2,3), then by division (SW, SD), then by name
+          const sortedData = data.sort((a, b) => {
+            if (a.cadetYear !== b.cadetYear) {
+              return a.cadetYear - b.cadetYear;
+            }
+            if (a.cadetDivision !== b.cadetDivision) {
+              return a.cadetDivision === "SW" ? -1 : 1;
+            }
+            return a.cadetName.localeCompare(b.cadetName);
+          });
+
+          const recordsHTML = sortedData
+            .map(
+              (record) => `
+                    <div class="cadet-record ${record.status}" data-year="${
+                record.cadetYear
+              }" 
+                         data-division="${record.cadetDivision}" data-status="${
+                record.status
+              }">
+                        <div class="record-header">
+                            <div class="record-name">${record.cadetName}</div>
+                            <div class="record-status ${record.status}">
+                                <i class="fas fa-${
+                                  record.status === "present"
+                                    ? "check"
+                                    : "times"
+                                }"></i>
+                                ${
+                                  record.status.charAt(0).toUpperCase() +
+                                  record.status.slice(1)
+                                }
+                            </div>
+                        </div>
+                        <div class="record-details">
+                            ${generateYearBadge(record.cadetYear)}
+                            ${generateDivisionBadge(record.cadetDivision)}
+                            <span class="record-rank">${record.cadetRank}</span>
+                        </div>
+                        ${
+                          record.reason
+                            ? `<div class="record-reason">Reason: ${record.reason}</div>`
+                            : ""
+                        }
+                    </div>
+                `
+            )
+            .join("");
+
+          document.getElementById("attendanceRecords").innerHTML = `
+                    <div class="records-grid">${recordsHTML}</div>
+                `;
+
+          this.applyFilters();
+        }
+
+        applyFilters() {
+          const records = document.querySelectorAll(".cadet-record");
+          let visibleCount = 0;
+
+          records.forEach((record) => {
+            const year = record.getAttribute("data-year");
+            const division = record.getAttribute("data-division");
+            const status = record.getAttribute("data-status");
+
+            const yearMatch =
+              this.filters.year === "all" || year === this.filters.year;
+            const divisionMatch =
+              this.filters.division === "all" ||
+              division === this.filters.division;
+            const statusMatch =
+              this.filters.status === "all" || status === this.filters.status;
+
+            if (yearMatch && divisionMatch && statusMatch) {
+              record.style.display = "block";
+              visibleCount++;
+            } else {
+              record.style.display = "none";
+            }
+          });
+
+          // Update summary for filtered view if needed
+          if (
+            this.filters.year !== "all" ||
+            this.filters.division !== "all" ||
+            this.filters.status !== "all"
+          ) {
+            this.updateFilteredSummary();
+          }
+        }
+
+        updateFilteredSummary() {
+          const visibleRecords = document.querySelectorAll(
+            '.cadet-record:not([style*="display: none"])'
+          );
+          const presentCount = Array.from(visibleRecords).filter((r) =>
+            r.classList.contains("present")
+          ).length;
+          const totalCount = visibleRecords.length;
+          const absentCount = totalCount - presentCount;
+          const percentage =
+            totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
+
+          // You could update the summary to show filtered results here if desired
+        }
+
+        getPerformanceClass(percentage) {
+          if (percentage >= 90) return "excellent";
+          if (percentage >= 75) return "good";
+          if (percentage >= 60) return "average";
+          return "poor";
+        }
+
+        exportCurrentView() {
+          const attendanceData = dataManager.getAttendanceData(
+            this.currentDate
+          );
+
+          if (!attendanceData || attendanceData.length === 0) {
+            showNotification("No attendance data to export", "error");
+            return;
+          }
+
+          const exportData = attendanceData.map((record) => ({
+            Date: this.currentDate,
+            Name: record.cadetName,
+            Rank: record.cadetRank,
+            Year: `${record.cadetYear}${
+              record.cadetYear === 1
+                ? "st"
+                : record.cadetYear === 2
+                ? "nd"
+                : "rd"
+            } Year`,
+            Division:
+              record.cadetDivision === "SD" ? "Senior Division" : "Senior Wing",
+            Status:
+              record.status.charAt(0).toUpperCase() + record.status.slice(1),
+            Reason: record.reason || "",
+            "Recorded At": new Date(record.timestamp).toLocaleString(),
+          }));
+
+          const filename = `NCC_Attendance_${this.currentDate}.csv`;
+          exportToCSV(exportData, filename);
+        }
+      }
+
+      // Initialize when DOM is loaded
+      document.addEventListener("DOMContentLoaded", function () {
+        const viewManager = new ViewAttendanceManager();
+      });
+    </script>
+  </body>
+</html>
